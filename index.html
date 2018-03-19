@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>vue project</title>
+    <script src="vue.js"></script>
+    <script src="app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.3.6"></script>
+  </head>
+
+  <style>
+
+    body {
+      text-align: center;
+      margin: 0px;
+    }
+
+    #app {
+      display: grid;
+      grid-template-columns: 300px auto;
+    }
+
+    #header-image {
+      width: 100%;
+      height: 400px;
+      padding: 50px;
+      box-sizing: border-box;
+      background-position: center 270%;
+      background-attachment: fixed;
+      background-size: cover;
+      text-align: left;
+      color: white;
+      font-family: sans-serif;
+      font-size: 2em;
+      text-shadow: 3px 3px 3px rgba(0,0,0,0.5);
+    }
+
+    #header-image h1 {
+      font-size: 3em;
+    }
+
+    #header-image h1, h3, h5 {
+      margin: 0px;
+    }
+
+    #sidebar {
+      height: 100%;
+      background: white;
+      padding: 20px;
+      border-right: solid lightgrey 2px;
+      text-align: left;
+    }
+
+    .sidebar-content {
+      position: fixed;
+      width: 250px;
+    }
+
+    .sidebar-content ul {
+      list-style: none;
+      padding: 0px;
+    }
+
+    #img-window {
+      position: fixed;
+      display: grid;
+      grid-template-columns: 70vw auto;
+      grid-column-gap: 20px;
+      background-color: black;
+      left: 0;
+      right: 0;
+      width: 100%;
+      border: solid black 20px;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    .expanded-img {
+      position: relative;
+      display: grid;
+      width: 100%;
+    }
+
+    #img-comment-container {
+      position: relative;
+      font-family: sans-serif;
+      height: 100%;
+      padding: 20px;
+      background: white;
+      box-sizing: border-box;
+    }
+
+    #img-comment-container h3 {
+      font-size: 28px;
+    }
+
+    #img-comment-container ul {
+      list-style: none;
+      padding: 0px;
+    }
+
+    #img-comment-container li {
+      padding: 5px;
+      margin: 0px;
+      background: #EEE;
+    }
+
+    #img-comment-container li:nth-child(odd) {
+      background: #F5F5F5;
+    }
+
+    #comment {
+      font-size: 14px;
+      width: 80%;
+      padding: 5px;
+      border-radius: 15px;
+      border: solid grey 1px;
+    }
+
+    #comment:focus {
+      outline: none;
+    }
+
+    #comment-submit {
+      border-radius: 15px;
+      height: 29px;
+      width: 29px;
+      padding: 7px;
+      background: #00C5FF;
+    }
+
+    #comment-submit:focus {
+      outline: none;
+    }
+
+    #search-box {
+      margin: 25px auto;
+      width: 100%;
+      height: 30px;
+      padding: 5px;
+    }
+
+    .gallery-container {
+      width: 100%;
+    }
+
+    #gallery-results {
+      padding: 20px;
+      font-family: sans-serif;
+      font-size: 20px;
+    }
+
+    .gallery-item {
+      width: 300px;
+      height: 200px;
+      display: inline-block;
+      margin: 0px 2px;
+      overflow: hidden;
+    }
+
+    .gallery-item:hover {
+      cursor: pointer;
+    }
+
+    .gallery-item:hover .overlay{
+      height: 200px;
+      transition: 0.2s ease all;
+    }
+
+    .gallery-item img {
+      width: 100%;
+    }
+
+    .overlay {
+      position: relative;
+      top: -204px;
+      width: 100%;
+      height: 0px;
+      padding: 0px 20px;
+      background: rgba(0,0,0,0.7);
+      overflow: hidden;
+      text-align: left;
+      color: white;
+      font-family: sans-serif;
+      pointer-events: none;
+      transition: 0.2s ease all;
+    }
+
+    .overlay p {
+      margin: 0px;
+    }
+
+    .overlay p:first-child {
+      margin: 20px 0px 5px 0px;
+      font-size: 26px;
+    }
+
+    .overlay p:nth-child(2) {
+      font-size: 18px;
+    }
+
+    #close-button {
+      position: fixed;
+      height: 60px;
+      width: 60px;
+      margin: 20px;
+      right: 20px;
+      border-radius: 30px;
+      border: solid rgba(0,0,0,0.6) 2px;
+      background: rgba(255,255,255,0.4);
+      z-index: 20;
+      cursor: pointer;
+      transition: 0.3s all ease;
+    }
+
+    #close-button:hover {
+      background: grey;
+      transition: 0.3s all ease;
+    }
+
+  </style>
+
+  <body>
+
+    <div id="app">
+
+      <div id="sidebar">
+        <div class="sidebar-content">
+          <input id="search-box" type="text" v-model="searchTerm" placeholder="search eg. nissan, toyota, sr20, 200sx" />
+          <h3>Make</h3>
+          <ul>
+            <li v-for="make in makes">
+              <input type="checkbox" v-bind:id="make" v-bind:value="make" v-model="checkedMakes">
+              <label v-bind:for="make">{{ make }} <span>()</span> </label>
+            </li>
+          </ul>
+          <h3>Model</h3>
+          <ul>
+            <li v-for="model in models">
+              <input type="checkbox" v-bind:id="model" v-bind:value="model" v-model="checkedModels">
+              <label v-bind:for="model">{{ model }}</label>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="img-window" v-if="expanded">
+        <button id="close-button" v-on:click="imgShrink()">X</button>
+        <img class="expanded-img" v-bind:src="current + '.jpg'">
+        <div id="img-comment-container">
+          <h3>Comments</h3>
+          <ul>
+            <li v-for="comment in comments">{{ comment._value }}</li>
+          </ul>
+          <input id="comment" placeholder="Your Comment" v-model="comment" v-on:keyup.enter="post" />
+          <button id="comment-submit" v-on:click="post"></button>
+        </div>
+      </div>
+
+      <div class="gallery-container">
+        <div id="header-image" v-bind:style="{ 'background-image': 'url(' + this.images[1].url + ')' }">
+          <h1>{{ title }}</h1>
+          <h3>{{ location }}</h3>
+          <h5>{{ date }}</h5>
+        </div>
+        <p id="gallery-results">Results: {{ this.filteredGallery.length }}</p>
+        <div class="gallery-item" v-for="image in filteredGallery">
+          <img v-on:click="imgExpand(); setCurrent(); retrieve()" v-bind:src="image.thumbnail">
+          <div class="overlay">
+            <p>{{ image.make | capitalize }}</p>
+            <p>{{ image.model | capitalize }}</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </body>
+
+<script>
+
+  var vueApp = new Vue({
+
+    el: '#app',
+    data: {
+      title: 'Japfest',
+      location: 'Silverstone',
+      date: '29/06/2017',
+      searchTerm: '',
+      current: '',
+      comment: '',
+      checkedMakes: [],
+      checkedModels: [],
+      comments: [],
+      expanded: false,
+      images: [
+        {url: 'img/1.jpg', thumbnail: 'img/1-thumb.jpg', make: 'nissan', model: 'cefiro', tags: ['rb20det', 'yellow', 'drift']},
+        {url: 'img/2.jpg', thumbnail: 'img/2-thumb.jpg', make: 'honda', model: 's2000', tags: ['f20c', 'vtec', 'convertible', 'black']},
+        {url: 'img/3.jpg', thumbnail: 'img/3-thumb.jpg', make: 'nissan', model: 'skyline', tags: ['rb26dett', 'gtr', '4wd', 'r32', 'white']},
+        {url: 'img/4.jpg', thumbnail: 'img/4-thumb.jpg', make: 'mazda', model: 'rx7', tags: ['13b', 'rotary', 'red', 'drift']},
+        {url: 'img/5.jpg', thumbnail: 'img/5-thumb.jpg', make: 'nissan', model: 'silvia', tags: ['sr20det', 'bnsport', 'orange', 'drift', 's13']},
+        {url: 'img/6.jpg', thumbnail: 'img/6-thumb.jpg', make: 'toyota', model: 'celica', tags: ['white']},
+        {url: 'img/7.jpg', thumbnail: 'img/7-thumb.jpg', make: 'toyota', model: 'gt86', tags: ['frs', 'brz', 'convertible', 'wing', 'black']},
+        {url: 'img/8.jpg', thumbnail: 'img/8-thumb.jpg', make: 'toyota', model: 'corolla', tags: ['ae86', 'hachiroku', 'panda', 'white']},
+        {url: 'img/9.jpg', thumbnail: 'img/9-thumb.jpg', make: 'nissan', model: 'silvia', tags: ['sr20det', 's14', 'red', 'drift']},
+        {url: 'img/10.jpg', thumbnail: 'img/10-thumb.jpg', make: 'honda', model: 'civic', tags: ['b16b', 'eg6', 'vtec', 'white']},
+        {url: 'img/11.jpg', thumbnail: 'img/11-thumb.jpg', make: 'nissan', model: '200sx', tags: ['sr20det', 'black', 'bnsport', 's13']},
+        {url: 'img/12.jpg', thumbnail: 'img/12-thumb.jpg', make: 'toyota', model: 'supra', tags: ['1jz', '2jz', 'black']},
+        {url: 'img/13.jpg', thumbnail: 'img/13-thumb.jpg', make: 'nissan', model: '200sx', tags: ['sr20det', 'blue', 's13']},
+        {url: 'img/14.jpg', thumbnail: 'img/14-thumb.jpg', make: 'toyota', model: 'gt86', tags: ['brz', 'frs', 'white', 'drift']},
+        {url: 'img/15.jpg', thumbnail: 'img/15-thumb.jpg', make: 'mazda', model: 'rx7', tags: ['13b', 'rotary', 'white', 'drift', 'rocketbunny']},
+        {url: 'img/16.jpg', thumbnail: 'img/16-thumb.jpg', make: 'toyota', model: 'mr2', tags: ['wide', 'green',]},
+        {url: 'img/17.jpg', thumbnail: 'img/17-thumb.jpg', make: 'toyota', model: 'starlet', tags: ['red', 'bags', 'work']},
+        {url: 'img/18.jpg', thumbnail: 'img/18-thumb.jpg', make: 'honda', model: 'civic', tags: ['b16b', 'ek4', 'bags', 'gold']},
+        {url: 'img/19.jpg', thumbnail: 'img/19-thumb.jpg', make: 'nissan', model: 'silvia', tags: ['s13', 'sr20det', 'black', 'drift']},
+        {url: 'img/20.jpg', thumbnail: 'img/20-thumb.jpg', make: 'toyota', model: 'mark2', tags: ['twotone', 'retro', 'brown',]},
+      ]
+    },
+    methods: {
+      imgExpand: function(){
+        this.expanded = true;
+      },
+      imgShrink: function(){
+        if(this.expanded){
+          this.expanded = false;
+        };
+      },
+      post: function(){
+          this.$http.post('https://garage-sparks.firebaseio.com/comments/' + this.current.replace('/', '-') + ' comments.json', comment).then(function(data){
+            console.log(data);
+            this.submitted = true;
+            this.retrieve();
+            this.comment = '';
+          });
+      },
+      retrieve: function(){
+          this.$http.get('https://garage-sparks.firebaseio.com/comments/' + this.current.replace('/', '-') + ' comments.json').then(function(data){
+            return data.json();
+          }).then(function(data){
+            var commentArray = [];
+            for(let key in data){
+              data[key].id = key
+              commentArray.push(data[key]);
+            }
+            this.comments = commentArray;
+            console.log(this.comments);
+          })
+      },
+      setCurrent: function(){
+        this.current = event.currentTarget.getAttribute('src').split("-").shift();
+      },
+      uniqueArray: function(arr){
+        var unique = [];
+        for(var i = (arr.length -1); i>=0; i--){
+          var e = arr[i];
+          if(unique[0] != e){
+            unique.unshift(e);
+          }
+        }
+        return unique;
+      },
+      makesArrays: function(){
+        for(var i = (this.makes.length - 1); i >= 0; i--){
+          var e = this.makes[i];
+          e = [];
+          console.log('---' + this.makes[i] + '---')
+          for(let img in this.images){
+            if(this.images[img].make === this.makes[i]){
+              e.push(this.images[img].model);
+            }
+          }
+          console.log(e.length);
+        }
+      }
+    },
+
+    computed: {
+
+  	  makes: function() {
+      	var makesArr = [];
+        for (var i = (this.images.length - 1); i >= 0; i--) {
+          makesArr.push(this.images[i].make);
+        }
+
+  			return this.uniqueArray(makesArr.sort());
+      },
+  		models: function() {
+      	var modelsArr = [];
+        for (var i = (this.images.length - 1); i >= 0; i--) {
+        	modelsArr.push(this.images[i].model);
+        }
+
+        return this.uniqueArray(modelsArr.sort());
+      },
+      filteredGallery: function() {
+        return this.images.filter((image) => {
+
+        	var matches = [false, false, false];
+
+          if (this.checkedMakes.indexOf(image.make) > -1) {
+            matches[0] = true;
+          }
+
+          if (this.checkedModels.indexOf(image.model) > -1) {
+            matches[1] = true;
+          }
+
+          if (this.checkedMakes.length == 0) {
+            matches[0] = true;
+          }
+
+          if (this.checkedModels.length == 0) {
+            matches[1] = true;
+          }
+
+          if(this.searchTerm != '' && image.tags.indexOf(this.searchTerm) > -1) {
+          	matches[2] = true;
+          }
+
+          if(this.searchTerm != '' && image.make == this.searchTerm) {
+            matches[2] = true;
+          }
+
+          if(this.searchTerm != '' && image.model == this.searchTerm) {
+            matches[2] = true;
+          }
+
+          if(this.searchTerm == '') {
+          	matches[2] = true;
+          }
+
+          return matches.indexOf(false) == -1;
+        });
+      }
+    },
+    filters: {
+      capitalize: function (value) {
+        if (!value) return ''
+        value = value.toString()
+        return value.charAt(0).toUpperCase() + value.slice(1)
+      }
+    }
+})
+
+vueApp.makesArrays();
+
+</script>
+
+</html>
